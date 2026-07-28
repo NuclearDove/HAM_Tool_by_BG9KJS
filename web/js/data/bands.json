@@ -1,0 +1,22 @@
+[
+  {"name":"2200m","f_low":0.1357,"f_high":0.1378,"cat":"LF","license":"B(≤15W)/C(≤1000W)","svc":"次要业务"},
+  {"name":"630m","f_low":0.472,"f_high":0.479,"cat":"MF","license":"B(≤15W)/C(≤1000W)","svc":"次要业务"},
+  {"name":"160m","f_low":1.8,"f_high":2.0,"cat":"MF","license":"B(≤15W)/C(≤1000W)","svc":"共同主要业务"},
+  {"name":"80m","f_low":3.5,"f_high":3.9,"cat":"HF","license":"B(≤15W)/C(≤1000W)","svc":"共同主要业务"},
+  {"name":"60m","f_low":5.3515,"f_high":5.3665,"cat":"HF","license":"B(≤15W)/C(≤1000W)","svc":"次要业务","note":"频道化操作，共15个信道(5.3515-5.3665MHz，每信道3kHz)","channels":[{"freq":5.3515,"ch":1},{"freq":5.3545,"ch":2},{"freq":5.3575,"ch":3},{"freq":5.3605,"ch":4},{"freq":5.3635,"ch":5}]},
+  {"name":"40m","f_low":7.0,"f_high":7.2,"cat":"HF","license":"B(≤15W)/C(≤1000W)","svc":"主要业务、共同主要业务","subs":[{"label":"专用段","f_low":7.0,"f_high":7.1,"svc":"主要业务"},{"label":"共用段","f_low":7.1,"f_high":7.2,"svc":"共同主要业务"}]},
+  {"name":"30m","f_low":10.1,"f_high":10.15,"cat":"HF","license":"B(≤15W)/C(≤1000W)","svc":"次要业务"},
+  {"name":"20m","f_low":14.0,"f_high":14.35,"cat":"HF","license":"B(≤15W)/C(≤1000W)","svc":"主要业务、共同主要业务","subs":[{"label":"专用段","f_low":14.0,"f_high":14.25,"svc":"主要业务"},{"label":"共用段","f_low":14.25,"f_high":14.35,"svc":"共同主要业务"}]},
+  {"name":"17m","f_low":18.068,"f_high":18.168,"cat":"HF","license":"B(≤15W)/C(≤1000W)","svc":"共同主要业务"},
+  {"name":"15m","f_low":21.0,"f_high":21.45,"cat":"HF","license":"B(≤15W)/C(≤1000W)","svc":"主要业务"},
+  {"name":"12m","f_low":24.89,"f_high":24.99,"cat":"HF","license":"B(≤15W)/C(≤1000W)","svc":"共同主要业务"},
+  {"name":"10m","f_low":28.0,"f_high":29.7,"cat":"HF","license":"B(≤15W)/C(≤1000W)","svc":"主要业务"},
+  {"name":"6m","f_low":50.0,"f_high":54.0,"cat":"VHF","license":"A/B/C(≤25W)","svc":"共同主要业务"},
+  {"name":"2m","f_low":144.0,"f_high":148.0,"cat":"VHF","license":"A/B/C(≤25W)","svc":"主要业务、共同主要业务","subs":[{"label":"专用段","f_low":144.0,"f_high":146.0,"svc":"主要业务"},{"label":"共用段","f_low":146.0,"f_high":148.0,"svc":"共同主要业务"}]},
+  {"name":"70cm","f_low":430.0,"f_high":440.0,"cat":"UHF","license":"A/B/C(≤25W)","svc":"次要业务"},
+  {"name":"23cm","f_low":1240.0,"f_high":1300.0,"cat":"UHF","license":"A/B/C(≤25W)","svc":"次要业务"},
+  {"name":"6cm","f_low":5650.0,"f_high":5850.0,"cat":"SHF","license":"B/C(≤25W)","svc":"次要业务"},
+  {"name":"3cm","f_low":10000.0,"f_high":10500.0,"cat":"SHF","license":"B/C(≤25W)","svc":"次要业务"},
+  {"name":"1.2cm","f_low":24000.0,"f_high":24250.0,"cat":"SHF","license":"B/C(≤25W)","svc":"次要业务"},
+  {"name":"6mm","f_low":47000.0,"f_high":47200.0,"cat":"EHF","license":"B/C(≤25W)","svc":"主要业务"}
+]
