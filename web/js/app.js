@@ -234,29 +234,29 @@ const ACTION_MAP = {
         import('./ham-voacap.js').then(mod => { Voacap = mod; Voacap.fillCurrentSfi(); });
     },
     // 卫星跟踪（延迟加载）
-    satSelectChange: () => {
-        if (Satellite) { Satellite.selectSatellite(); return; }
-        import('./ham-satellite.js').then(mod => { Satellite = mod; Satellite.selectSatellite(); });
-    },
     satSwitchApiSource: () => {
         if (Satellite) { Satellite.switchApiSource(); return; }
-        import('./ham-satellite.js').then(mod => { Satellite = mod; Satellite.switchApiSource(); });
+        import('./ham-satellite.js?v=20260730').then(mod => { Satellite = mod; Satellite.init(); Satellite.switchApiSource(); });
     },
     satPredictPasses: () => {
         if (Satellite) { Satellite.predictPasses(); return; }
-        import('./ham-satellite.js').then(mod => { Satellite = mod; Satellite.predictPasses(); });
+        import('./ham-satellite.js?v=20260730').then(mod => { Satellite = mod; Satellite.init(); Satellite.predictPasses(); });
     },
     satClear: () => {
         if (Satellite) { Satellite.clearSatellite(); return; }
-        import('./ham-satellite.js').then(mod => { Satellite = mod; Satellite.clearSatellite(); });
+        import('./ham-satellite.js?v=20260730').then(mod => { Satellite = mod; Satellite.init(); Satellite.clearSatellite(); });
     },
     satGetMyLocation: () => {
         if (Satellite) { Satellite.getMyLocation(); return; }
-        import('./ham-satellite.js').then(mod => { Satellite = mod; Satellite.getMyLocation(); });
+        import('./ham-satellite.js?v=20260730').then(mod => { Satellite = mod; Satellite.init(); Satellite.getMyLocation(); });
     },
     satSaveApiKey: () => {
         if (Satellite) { Satellite.saveApiKey(); return; }
-        import('./ham-satellite.js').then(mod => { Satellite = mod; Satellite.saveApiKey(); });
+        import('./ham-satellite.js?v=20260730').then(mod => { Satellite = mod; Satellite.init(); Satellite.saveApiKey(); });
+    },
+    satUpdatePosition: () => {
+        if (Satellite) { Satellite.updatePosition(); return; }
+        import('./ham-satellite.js?v=20260730').then(mod => { Satellite = mod; Satellite.init(); Satellite.updatePosition(); });
     },
     // 子Tab切换
     switchSubTab: (el) => switchSubTab(el, el.dataset.parent || 'ref'),
@@ -435,11 +435,9 @@ function initTabs() {
                 }).catch((err) => console.error('[HAM] VOACAP module load failed:', err));
             }
             // 按需加载卫星跟踪模块
-            if (btn.dataset.tab === 'satellite' && !Satellite) {
-                import('./ham-satellite.js').then(mod => {
-                    Satellite = mod;
-                    Satellite.init();
-                }).catch((err) => console.error('[HAM] Satellite module load failed:', err));
+            if (btn.dataset.tab === 'satellite') {
+                const loadSat = Satellite ? Promise.resolve(Satellite) : import('./ham-satellite.js?v=20260730').then(mod => { Satellite = mod; return mod; });
+                loadSat.then(mod => { mod.init(); }).catch((err) => console.error('[HAM] Satellite module load failed:', err));
             }
         });
     });

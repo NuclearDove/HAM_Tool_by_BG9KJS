@@ -23,8 +23,7 @@ const NOAA_APIS = {
   regions: 'https://services.swpc.noaa.gov/json/solar_regions.json'
 };
 
-// 历史数据缓存
-let solarHistory: SolarHistoryPoint[] | null = null;
+// 加载状态
 let solarLoading = false;
 
 // Canvas引用
@@ -48,20 +47,16 @@ async function fetchSolarData(): Promise<SolarData | null> {
   const timeoutId = setTimeout(() => controller.abort(), 15000);
 
   try {
+    // 请求辅助函数：fetch + JSON解析 + 超时/HTTP错误处理
+    const fetchJson = (url: string) => fetch(url, { cache: 'no-cache', signal: controller.signal })
+      .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+      .catch(e => { if (e.name === 'AbortError') throw new Error('请求超时'); throw e; });
     // 并行请求4个NOAA SWPC API
     const [sfiRes, snRes, kRes, regRes] = await Promise.allSettled([
-      fetch(NOAA_APIS.sfi, { cache: 'no-cache', signal: controller.signal })
-        .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
-        .catch(e => { if (e.name === 'AbortError') throw new Error('请求超时'); throw e; }),
-      fetch(NOAA_APIS.sn, { cache: 'no-cache', signal: controller.signal })
-        .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
-        .catch(e => { if (e.name === 'AbortError') throw new Error('请求超时'); throw e; }),
-      fetch(NOAA_APIS.kIndex, { cache: 'no-cache', signal: controller.signal })
-        .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
-        .catch(e => { if (e.name === 'AbortError') throw new Error('请求超时'); throw e; }),
-      fetch(NOAA_APIS.regions, { cache: 'no-cache', signal: controller.signal })
-        .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
-        .catch(e => { if (e.name === 'AbortError') throw new Error('请求超时'); throw e; })
+      fetchJson(NOAA_APIS.sfi),
+      fetchJson(NOAA_APIS.sn),
+      fetchJson(NOAA_APIS.kIndex),
+      fetchJson(NOAA_APIS.regions)
     ]);
 
     // 提取SFI (F10.7cm太阳射电流量)
@@ -174,13 +169,9 @@ async function fetchSolarData(): Promise<SolarData | null> {
 
     // 保存当前数据点
     saveSolarData(result);
-
-    // 将NOAA SFI历史数据合并到localStorage
-    if (sfiHistory.length > 0) {
+    // 将NOAA历史数据合并到localStorage
+    if (sfiHistory.length > 0 || snHistory.length > 0) {
       mergeSfiHistory(sfiHistory, snHistory);
-    } else if (snHistory.length > 0) {
-      // 仅SN历史数据时也需要合并
-      mergeSfiHistory([], snHistory);
     }
 
     clearTimeout(timeoutId);
@@ -311,22 +302,6 @@ function mergeSfiHistory(noaaHistory: SolarHistoryPoint[], noaaSnHistory?: Array
       // 忽略存储错误
     }
   }
-}
-
-/**
- * 生成模拟数据（API不可用时）
- * @deprecated 已移除随机模拟数据，改为返回null表示无数据可用
- */
-function generateSimulatedData(): null {
-  return null;
-}
-
-/**
- * 生成模拟历史数据用于曲线展示
- * @deprecated 已移除随机模拟历史数据，改为返回空数组表示无历史数据
- */
-function generateSimulatedHistory(): SolarHistoryPoint[] {
-  return [];
 }
 
 // ============================================================
@@ -608,7 +583,6 @@ async function solarRefresh(): Promise<void> {
  */
 function solarClearCache(): void {
   localStorage.removeItem('ham_solar_history');
-  solarHistory = null;
   const el = document.getElementById('solarStatus');
   if (el) el.textContent = '缓存已清除';
   if (solarCtx) {
@@ -629,7 +603,6 @@ function solarClearCache(): void {
 
 /** 自动刷新间隔（30分钟） */
 const SOLAR_REFRESH_INTERVAL = 30 * 60 * 1000;
-let solarRefreshTimer: ReturnType<typeof setInterval> | null = null;
 
 function init(): void {
   solarCanvas = document.getElementById('solarCanvas') as HTMLCanvasElement | null;
@@ -650,7 +623,7 @@ function init(): void {
   solarRefresh();
 
   // 定时自动刷新
-  solarRefreshTimer = setInterval(() => {
+  setInterval(() => {
     // 仅在voacap tab可见时刷新
     const voacapTab = document.getElementById('tab-voacap');
     if (voacapTab && voacapTab.classList.contains('active')) {
@@ -659,14 +632,6 @@ function init(): void {
   }, SOLAR_REFRESH_INTERVAL);
 
   console.log('[HAM] Solar Chart initialized');
-}
-
-/** 停止自动刷新 */
-function solarStopAutoRefresh(): void {
-  if (solarRefreshTimer) {
-    clearInterval(solarRefreshTimer);
-    solarRefreshTimer = null;
-  }
 }
 
 // ============================================================

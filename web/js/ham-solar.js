@@ -15,11 +15,11 @@ const SOLAR_PADDING = { top: 30, right: 20, bottom: 40, left: 55 };
 const NOAA_APIS = {
     sfi: 'https://services.swpc.noaa.gov/json/f107_cm_flux.json',
     sn: 'https://services.swpc.noaa.gov/json/sunspot_report.json',
+    snDaily: 'https://services.swpc.noaa.gov/json/solar-cycle/swpc_observed_ssn.json',
     kIndex: 'https://services.swpc.noaa.gov/json/planetary_k_index_1m.json',
     regions: 'https://services.swpc.noaa.gov/json/solar_regions.json'
 };
-// 历史数据缓存
-let solarHistory = null;
+// 加载状态
 let solarLoading = false;
 // Canvas引用
 let solarCanvas = null;
@@ -39,28 +39,17 @@ async function fetchSolarData() {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 15000);
     try {
-        // 并行请求4个NOAA SWPC API
-        const [sfiRes, snRes, kRes, regRes] = await Promise.allSettled([
-            fetch(NOAA_APIS.sfi, { cache: 'no-cache', signal: controller.signal })
-                .then(r => { if (!r.ok)
-                throw new Error('HTTP ' + r.status); return r.json(); })
-                .catch(e => { if (e.name === 'AbortError')
-                throw new Error('请求超时'); throw e; }),
-            fetch(NOAA_APIS.sn, { cache: 'no-cache', signal: controller.signal })
-                .then(r => { if (!r.ok)
-                throw new Error('HTTP ' + r.status); return r.json(); })
-                .catch(e => { if (e.name === 'AbortError')
-                throw new Error('请求超时'); throw e; }),
-            fetch(NOAA_APIS.kIndex, { cache: 'no-cache', signal: controller.signal })
-                .then(r => { if (!r.ok)
-                throw new Error('HTTP ' + r.status); return r.json(); })
-                .catch(e => { if (e.name === 'AbortError')
-                throw new Error('请求超时'); throw e; }),
-            fetch(NOAA_APIS.regions, { cache: 'no-cache', signal: controller.signal })
-                .then(r => { if (!r.ok)
-                throw new Error('HTTP ' + r.status); return r.json(); })
-                .catch(e => { if (e.name === 'AbortError')
-                throw new Error('请求超时'); throw e; })
+        // 请求辅助函数：fetch + JSON解析 + 超时/HTTP错误处理
+        const fetchJson = (url) => fetch(url, { cache: 'no-cache', signal: controller.signal })
+            .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+            .catch(e => { if (e.name === 'AbortError') throw new Error('请求超时'); throw e; });
+        // 并行请求5个NOAA SWPC API
+        const [sfiRes, snRes, snDailyRes, kRes, regRes] = await Promise.allSettled([
+            fetchJson(NOAA_APIS.sfi),
+            fetchJson(NOAA_APIS.sn),
+            fetchJson(NOAA_APIS.snDaily),
+            fetchJson(NOAA_APIS.kIndex),
+            fetchJson(NOAA_APIS.regions)
         ]);
         // 提取SFI (F10.7cm太阳射电流量)
         let sfi = 0;
@@ -138,6 +127,20 @@ async function fetchSolarData() {
             }
             snHistory = dailySn;
         }
+        // 提取每日SN历史数据（swpc_observed_ssn.json）- 覆盖1996至今的每日SSN
+        // 用于补充sunspot_report.json仅覆盖~30天的不足
+        let snDailyHistory = [];
+        if (snDailyRes.status === 'fulfilled' && Array.isArray(snDailyRes.value) && snDailyRes.value.length > 0) {
+            const cutoff = Date.now() - 120 * 86400000; // 只保留最近120天
+            snDailyHistory = snDailyRes.value
+                .filter(d => d.Obsdate && d.swpc_ssn !== undefined)
+                .map(d => ({
+                    sn: parseInt(d.swpc_ssn) || 0,
+                    time: new Date(d.Obsdate).getTime()
+                }))
+                .filter(d => d.time >= cutoff)
+                .sort((a, b) => a.time - b.time);
+        }
         // 提取K指数和估算A指数
         let kIndex = 0;
         let aIndex = 0;
@@ -176,13 +179,9 @@ async function fetchSolarData() {
             statusEl.textContent = '数据更新于 ' + new Date().toLocaleTimeString() + ' (NOAA/SWPC)';
         // 保存当前数据点
         saveSolarData(result);
-        // 将NOAA SFI历史数据合并到localStorage
-        if (sfiHistory.length > 0) {
-            mergeSfiHistory(sfiHistory, snHistory);
-        }
-        else if (snHistory.length > 0) {
-            // 仅SN历史数据时也需要合并
-            mergeSfiHistory([], snHistory);
+        // 将NOAA历史数据合并到localStorage
+        if (sfiHistory.length > 0 || snHistory.length > 0 || snDailyHistory.length > 0) {
+            mergeSfiHistory(sfiHistory, snHistory, snDailyHistory);
         }
         clearTimeout(timeoutId);
         return result;
@@ -265,8 +264,11 @@ function loadSolarHistory() {
 /**
  * 将NOAA SFI和SN历史数据合并到localStorage
  * 避免重复数据点，保留本地已有的额外字段
+ * @param {Array} noaaHistory - SFI历史数据（来自f107_cm_flux.json）
+ * @param {Array} noaaSnHistory - SN历史数据（来自sunspot_report.json，~30天）
+ * @param {Array} [noaaSnDailyHistory] - 每日SN历史数据（来自swpc_observed_ssn.json，~120天）
  */
-function mergeSfiHistory(noaaHistory, noaaSnHistory) {
+function mergeSfiHistory(noaaHistory, noaaSnHistory, noaaSnDailyHistory) {
     let local = loadSolarHistory() || [];
     // 建立本地时间索引（精确到小时）
     const localTimes = new Set(local.map(d => Math.floor(d.time / 3600000)));
@@ -281,6 +283,8 @@ function mergeSfiHistory(noaaHistory, noaaSnHistory) {
         }
     });
     // 合并NOAA SN历史数据到对应时间点的本地记录
+    // sunspot_report.json（~30天）优先级最高
+    let snUpdated = false;
     if (noaaSnHistory && noaaSnHistory.length > 0) {
         // 建立SN时间索引（精确到天）
         const snByDay = new Map();
@@ -294,11 +298,33 @@ function mergeSfiHistory(noaaHistory, noaaSnHistory) {
                 const dayKey = Math.floor(d.time / 86400000);
                 if (snByDay.has(dayKey)) {
                     d.sn = snByDay.get(dayKey);
+                    snUpdated = true;
                 }
             }
         });
     }
-    if (added > 0) {
+    // 使用swpc_observed_ssn.json（~120天）补充早期日期的SN数据
+    // 此数据源覆盖范围更广，用于填充sunspot_report.json未覆盖的日期
+    if (noaaSnDailyHistory && noaaSnDailyHistory.length > 0) {
+        const snDailyByDay = new Map();
+        noaaSnDailyHistory.forEach(d => {
+            const dayKey = Math.floor(d.time / 86400000);
+            // 不覆盖已有数据（sunspot_report.json的Wolf数更精确）
+            if (!snDailyByDay.has(dayKey)) {
+                snDailyByDay.set(dayKey, d.sn);
+            }
+        });
+        local.forEach(d => {
+            if (d.sn === 0 || d.sn === undefined) {
+                const dayKey = Math.floor(d.time / 86400000);
+                if (snDailyByDay.has(dayKey)) {
+                    d.sn = snDailyByDay.get(dayKey);
+                    snUpdated = true;
+                }
+            }
+        });
+    }
+    if (added > 0 || snUpdated) {
         // 按时间排序
         local.sort((a, b) => a.time - b.time);
         // 限制最大数量
@@ -313,20 +339,7 @@ function mergeSfiHistory(noaaHistory, noaaSnHistory) {
         }
     }
 }
-/**
- * 生成模拟数据（API不可用时）
- * @deprecated 已移除随机模拟数据，改为返回null表示无数据可用
- */
-function generateSimulatedData() {
-    return null;
-}
-/**
- * 生成模拟历史数据用于曲线展示
- * @deprecated 已移除随机模拟历史数据，改为返回空数组表示无历史数据
- */
-function generateSimulatedHistory() {
-    return [];
-}
+
 // ============================================================
 // 绘图
 // ============================================================
@@ -607,7 +620,6 @@ async function solarRefresh() {
  */
 function solarClearCache() {
     localStorage.removeItem('ham_solar_history');
-    solarHistory = null;
     const el = document.getElementById('solarStatus');
     if (el)
         el.textContent = '缓存已清除';
@@ -628,7 +640,6 @@ function solarClearCache() {
 // ============================================================
 /** 自动刷新间隔（30分钟） */
 const SOLAR_REFRESH_INTERVAL = 30 * 60 * 1000;
-let solarRefreshTimer = null;
 function init() {
     solarCanvas = document.getElementById('solarCanvas');
     if (!solarCanvas)
@@ -644,7 +655,7 @@ function init() {
     // 自动加载一次
     solarRefresh();
     // 定时自动刷新
-    solarRefreshTimer = setInterval(() => {
+    setInterval(() => {
         // 仅在voacap tab可见时刷新
         const voacapTab = document.getElementById('tab-voacap');
         if (voacapTab && voacapTab.classList.contains('active')) {
@@ -652,13 +663,6 @@ function init() {
         }
     }, SOLAR_REFRESH_INTERVAL);
     console.log('[HAM] Solar Chart initialized');
-}
-/** 停止自动刷新 */
-function solarStopAutoRefresh() {
-    if (solarRefreshTimer) {
-        clearInterval(solarRefreshTimer);
-        solarRefreshTimer = null;
-    }
 }
 // ============================================================
 // 导出

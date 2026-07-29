@@ -13,7 +13,8 @@ const STORAGE_LABELS = {
     'ham_solar_history': '太阳通量历史',
     'ham_n2yo_api_key': 'N2YO API Key',
     'ham_sat_api_source': '卫星数据源',
-    'ham_cw_key_settings': 'CW按键设置'
+    'ham_cw_key_settings': 'CW按键设置',
+    'ham_tle_cache': 'TLE卫星数据缓存'
 };
 
 // 默认5MB上限（浏览器通常限制）
@@ -160,7 +161,7 @@ function buildWidgetHTML() {
     </div>
 
     <div class="storage-panel">
-      <div class="storage-panel-header">存储详情 <span class="storage-refresh" title="刷新" tabindex="0" role="button">↻</span></div>`;
+      <div class="storage-panel-header">存储详情 <span class="storage-header-actions"><span class="storage-refresh" title="刷新" tabindex="0" role="button">↻</span><span class="storage-clear" title="清除数据" tabindex="0" role="button">🗑</span></span></div>`;
 
     // 各子项占用
     if (usage.items.length > 0) {
@@ -180,6 +181,21 @@ function buildWidgetHTML() {
         html += `</div>`;
     }
 
+    // 清除确认弹窗
+    html += `
+      <div class="storage-clear-bar">
+        <button class="storage-clear-btn" title="清除所有本地存储数据">清除全部数据</button>
+      </div>
+      <div class="storage-confirm-overlay" style="display:none">
+        <div class="storage-confirm-dialog">
+          <div class="storage-confirm-title">确认清除数据</div>
+          <div class="storage-confirm-msg">将清除所有本地存储数据（通联日志、太阳通量历史等），此操作不可撤销。</div>
+          <div class="storage-confirm-actions">
+            <button class="storage-confirm-cancel">取消</button>
+            <button class="storage-confirm-ok">确认清除</button>
+          </div>
+        </div>
+      </div>`;
     html += `</div>`;
     return html;
 }
@@ -221,6 +237,73 @@ function refreshWidget() {
             refreshWidget();
         });
     }
+    // 绑定清除按钮（头部图标）
+    const clearIcon = widget.querySelector('.storage-clear');
+    if (clearIcon) {
+        clearIcon.addEventListener('click', function(e) {
+            e.stopPropagation();
+            showClearConfirm();
+        });
+    }
+    // 绑定清除按钮（底部按钮）
+    const clearBtn = widget.querySelector('.storage-clear-btn');
+    if (clearBtn) {
+        clearBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            showClearConfirm();
+        });
+    }
+    // 绑定确认弹窗按钮
+    const confirmOk = widget.querySelector('.storage-confirm-ok');
+    const confirmCancel = widget.querySelector('.storage-confirm-cancel');
+    const confirmOverlay = widget.querySelector('.storage-confirm-overlay');
+    if (confirmOk) {
+        confirmOk.addEventListener('click', function(e) {
+            e.stopPropagation();
+            clearAllStorage();
+            hideClearConfirm();
+        });
+    }
+    if (confirmCancel) {
+        confirmCancel.addEventListener('click', function(e) {
+            e.stopPropagation();
+            hideClearConfirm();
+        });
+    }
+    if (confirmOverlay) {
+        confirmOverlay.addEventListener('click', function(e) {
+            if (e.target === confirmOverlay) hideClearConfirm();
+        });
+    }
+}
+
+/**
+ * 清除所有ham_前缀的localStorage数据
+ */
+function clearAllStorage() {
+    const keys = [];
+    for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key.startsWith('ham_')) keys.push(key);
+    }
+    keys.forEach(key => localStorage.removeItem(key));
+    refreshWidget();
+}
+
+/**
+ * 显示清除确认弹窗
+ */
+function showClearConfirm() {
+    const overlay = document.querySelector('#storageWidget .storage-confirm-overlay');
+    if (overlay) overlay.style.display = '';
+}
+
+/**
+ * 隐藏清除确认弹窗
+ */
+function hideClearConfirm() {
+    const overlay = document.querySelector('#storageWidget .storage-confirm-overlay');
+    if (overlay) overlay.style.display = 'none';
 }
 
 /**
