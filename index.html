@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="refresh" content="3;url=web/ham_toolbox.html">
+<title>HAM Radio Toolbox - 业余无线电工具箱</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Segoe UI','Microsoft YaHei',sans-serif;background:linear-gradient(135deg,#0d1b3e 0%,#1a237e 40%,#283593 70%,#3949ab 100%);color:#fff;min-height:100vh;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.container{text-align:center;padding:40px 24px;max-width:600px}
+.logo{font-size:64px;margin-bottom:16px;animation:pulse 2s ease-in-out infinite}
+@keyframes pulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.08);opacity:.85}}
+h1{font-size:28px;font-weight:700;margin-bottom:8px;letter-spacing:1px}
+.subtitle{font-size:14px;opacity:.7;margin-bottom:32px;letter-spacing:.5px}
+.card{background:rgba(255,255,255,.08);backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,.15);border-radius:16px;padding:28px 24px;margin-bottom:24px}
+.card p{font-size:13px;line-height:1.8;opacity:.85;margin-bottom:4px}
+.enter-btn{display:inline-block;padding:12px 36px;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);border-radius:8px;color:#fff;font-size:15px;font-weight:600;text-decoration:none;transition:all .3s;letter-spacing:1px}
+.enter-btn:hover{background:rgba(255,255,255,.25);border-color:rgba(255,255,255,.5);transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,.3)}
+.footer{font-size:11px;opacity:.4;margin-top:20px}
+.spinner{display:inline-block;width:16px;height:16px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .8s linear infinite;vertical-align:middle;margin-right:6px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.redirect-hint{font-size:12px;opacity:.5;margin-top:16px}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="logo">📻</div>
+  <h1>HAM Radio Toolbox</h1>
+  <p class="subtitle">业余无线电工具箱 · Web Edition</p>
+  <div class="card">
+    <p>📡 频率查询与频段规划</p>
+    <p>📐 射频计算与天线工具</p>
+    <p>🗺️ 网格坐标与通联地图</p>
+    <p>📝 通联日志管理与导出</p>
+    <p>🔑 CW 摩尔斯电码练习</p>
+    <p>🛠️ 实用工具集</p>
+  </div>
+  <a class="enter-btn" href="web/ham_toolbox.html">进入工具箱 →</a>
+  <p class="redirect-hint"><span class="spinner"></span>3 秒后自动跳转</p>
+  <p class="footer">BG9KJS · Open Source</p>
+</div>
+</body>
+</html>

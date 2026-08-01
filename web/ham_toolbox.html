@@ -1,0 +1,1556 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<title>HAM Radio Toolbox - 业余无线电工具箱</title>
+<style>
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+  background: #f0f2f5;
+  color: #333;
+  min-height: 100vh;
+  padding-bottom: 40px;
+}
+
+.header {
+  background: linear-gradient(135deg, #1a237e, #283593);
+  color: #fff;
+  padding: 12px 24px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  position: relative;
+  flex-wrap: wrap;
+}
+
+.header h1 {
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.header .subtitle {
+  font-size: 12px;
+  opacity: .8;
+}
+
+.header-spacer {
+  flex: 1;
+}
+
+/* 存储监控组件 */
+#storageWidget {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+  min-width: 200px;
+  max-width: 280px;
+}
+
+.storage-summary {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 4px;
+  background: rgba(255,255,255,0.12);
+  font-size: 12px;
+  user-select: none;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.storage-summary:hover {
+  background: rgba(255,255,255,0.22);
+}
+.storage-summary:focus-visible {
+  outline: 2px solid #ff9800;
+  outline-offset: 2px;
+}
+.storage-arrow {
+  font-size: 10px;
+  opacity: 0.7;
+  transition: transform 0.2s;
+  width: 12px;
+  text-align: center;
+  flex-shrink: 0;
+}
+.storage-icon { font-size: 14px; }
+.storage-text { white-space: nowrap; }
+.storage-bar-wrap {
+  width: 50px; height: 8px;
+  background: rgba(255,255,255,0.2);
+  border-radius: 4px; overflow: hidden;
+}
+.storage-bar {
+  display: block; height: 100%;
+  border-radius: 4px;
+  transition: width 0.3s;
+}
+.storage-ok { background: #4caf50; }
+.storage-warning { background: #ff9800; }
+.storage-danger { background: #f44336; }
+.storage-pct { font-size: 11px; opacity: 0.85; }
+
+/* 独立弹出详情面板 */
+.storage-panel {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 6px;
+  width: 300px;
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+  padding: 12px 14px;
+  z-index: 1000;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-8px);
+  transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s;
+  pointer-events: none;
+}
+.storage-panel-open {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+.storage-panel-header {
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid #e0e0e0;
+  color: #333;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.storage-refresh {
+  font-size: 16px;
+  cursor: pointer;
+  opacity: 0.5;
+  transition: opacity 0.2s, transform 0.3s;
+  user-select: none;
+}
+.storage-refresh:hover {
+  opacity: 1;
+  transform: rotate(180deg);
+}
+.storage-disclaimer {
+  font-size: 10px;
+  color: #888;
+  line-height: 1.4;
+  margin-bottom: 8px;
+}
+.storage-disclaimer a:hover { opacity: 1; }
+
+/* 各子项占用 */
+.storage-items {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.storage-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  line-height: 1;
+  padding: 3px 0;
+  color: #555;
+}
+.storage-item-label {
+  width: 90px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.storage-item-bar-wrap {
+  flex: 1;
+  height: 6px;
+  background: #f0f0f0;
+  border-radius: 3px;
+  overflow: hidden;
+  min-width: 50px;
+}
+.storage-item-bar {
+  display: block;
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.3s;
+}
+.storage-item-size {
+  width: 55px;
+  text-align: right;
+  color: #888;
+  flex-shrink: 0;
+  font-size: 10px;
+}
+
+/* 面板头部操作按钮组 */
+.storage-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.storage-clear {
+  font-size: 14px;
+  cursor: pointer;
+  opacity: 0.5;
+  transition: opacity 0.2s;
+  user-select: none;
+}
+.storage-clear:hover {
+  opacity: 1;
+}
+
+/* 底部清除按钮栏 */
+.storage-clear-bar {
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid #e0e0e0;
+  text-align: right;
+}
+.storage-clear-btn {
+  background: none;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  padding: 4px 12px;
+  font-size: 11px;
+  color: #888;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.storage-clear-btn:hover {
+  color: #d32f2f;
+  border-color: #d32f2f;
+  background: #fce4ec;
+}
+
+/* 确认弹窗 */
+.storage-confirm-overlay {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.35);
+  border-radius: 8px;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.storage-confirm-dialog {
+  background: #fff;
+  border-radius: 8px;
+  padding: 16px;
+  width: 240px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+  text-align: center;
+}
+.storage-confirm-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 8px;
+}
+.storage-confirm-msg {
+  font-size: 11px;
+  color: #666;
+  line-height: 1.5;
+  margin-bottom: 14px;
+}
+.storage-confirm-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+}
+.storage-confirm-cancel,
+.storage-confirm-ok {
+  border: none;
+  border-radius: 4px;
+  padding: 6px 16px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.storage-confirm-cancel {
+  background: #f5f5f5;
+  color: #666;
+}
+.storage-confirm-cancel:hover {
+  background: #e0e0e0;
+}
+.storage-confirm-ok {
+  background: #d32f2f;
+  color: #fff;
+}
+.storage-confirm-ok:hover {
+  background: #b71c1c;
+}
+
+/* 页脚 */
+.site-footer {
+  background: #263238;
+  color: #b0bec5;
+  padding: 18px 24px 36px;
+  font-size: 12px;
+  line-height: 1.8;
+  text-align: center;
+}
+.site-footer .footer-ai-notice {
+  margin-bottom: 8px;
+  color: #90a4ae;
+  font-size: 11px;
+}
+.site-footer .footer-cc {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.site-footer .footer-cc a {
+  color: #80cbc4;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+.site-footer .footer-cc a:hover { color: #b2dfdb; text-decoration: underline; }
+
+.tab-bar {
+  display: flex;
+  background: #fff;
+  border-bottom: 2px solid #e0e0e0;
+  overflow-x: auto;
+  flex-wrap: nowrap;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.tab-bar::-webkit-scrollbar {
+  display: none;
+}
+
+.tab-btn {
+  padding: 10px 16px;
+  cursor: pointer;
+  border: none;
+  background: none;
+  font-size: 13px;
+  white-space: nowrap;
+  color: #666;
+  transition: all .2s;
+  border-bottom: 3px solid transparent;
+  position: relative;
+}
+
+.tab-btn:hover {
+  color: #1a237e;
+  background: #f5f5f5;
+}
+
+.tab-btn.active {
+  color: #1a237e;
+  font-weight: 600;
+  border-bottom-color: #1a237e;
+  background: #e8eaf6;
+}
+
+.tab-content {
+  display: none;
+  padding: 16px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.tab-content.active {
+  display: block;
+}
+
+.status-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: #e8eaf6;
+  padding: 6px 16px;
+  font-size: 12px;
+  color: #555;
+  border-top: 1px solid #c5cae9;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  white-space: normal;
+  line-height: 1.5;
+  z-index: 1000;
+}
+
+.card {
+  background: #fff;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, .1);
+}
+
+.card h3 {
+  font-size: 14px;
+  color: #1a237e;
+  margin-bottom: 8px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.form-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+
+.form-row label {
+  min-width: unset;
+  font-size: 13px;
+  color: #555;
+}
+
+/* 字段组分隔：跟在input/select/span/button后面的label是新字段组起始，增加左边距 */
+.form-row input + label,
+.form-row select + label,
+.form-row span + label,
+.form-row button + label {
+  margin-left: 12px;
+}
+
+.unit {
+  font-size: 12px;
+  color: #888;
+  margin-left: 2px;
+  margin-right: 6px;
+}
+
+.help-box {
+  font-size: 12px;
+  color: #666;
+  background: #f8f9fa;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  padding: 10px 14px;
+  margin-bottom: 10px;
+  line-height: 1.6;
+}
+
+.help-box p {
+  margin: 0 0 4px 0;
+}
+
+.help-box ul {
+  margin: 4px 0 0 0;
+  padding-left: 20px;
+}
+
+.help-box li {
+  margin-bottom: 2px;
+}
+
+.form-row input,
+.form-row select {
+  padding: 6px 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 13px;
+  min-width: 100px;
+}
+
+.form-row input:focus,
+.form-row select:focus {
+  outline: none;
+  border-color: #1a237e;
+  box-shadow: 0 0 0 2px rgba(26, 35, 126, .15);
+}
+
+.btn {
+  padding: 6px 16px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+  transition: all .2s;
+}
+
+.btn-primary {
+  background: #1a237e;
+  color: #fff;
+}
+
+.btn-primary:hover {
+  background: #283593;
+}
+
+.btn-secondary {
+  background: #e0e0e0;
+  color: #333;
+}
+
+.btn-secondary:hover {
+  background: #bdbdbd;
+}
+
+.btn-danger {
+  background: #c62828;
+  color: #fff;
+}
+
+.btn-danger:hover {
+  background: #b71c1c;
+}
+
+.btn-success {
+  background: #2e7d32;
+  color: #fff;
+}
+
+.btn-success:hover {
+  background: #1b5e20;
+}
+
+.result-box {
+  background: #f5f5f5;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  padding: 10px;
+  font-family: Consolas, monospace;
+  font-size: 13px;
+  white-space: pre-wrap;
+  min-height: 60px;
+  max-height: 300px;
+  overflow-y: auto;
+  line-height: 1.6;
+}
+
+/* VOACAP 传播预测 */
+.voacap-summary h4 { margin:0 0 8px 0; color:#1a237e; font-size:14px; }
+.voacap-route { display:flex; gap:12px; align-items:center; flex-wrap:wrap; margin-bottom:10px; font-size:13px; }
+.voacap-params { display:flex; flex-wrap:wrap; gap:10px; margin-bottom:10px; }
+.voacap-param { background:#f5f5f5; border:1px solid #e0e0e0; border-radius:6px; padding:8px 14px; text-align:center; min-width:90px; }
+.voacap-param label { display:block; font-size:11px; color:#888; margin-bottom:4px; }
+.voacap-param span { font-size:16px; font-weight:700; color:#1a237e; }
+.voacap-recommendation { background:#e8f5e9; border:1px solid #c8e6c9; border-radius:6px; padding:10px 14px; margin-bottom:10px; font-size:13px; }
+.voacap-bands h5 { margin:0 0 6px 0; color:#1a237e; font-size:13px; }
+.voacap-bands table { width:100%; border-collapse:collapse; }
+.voacap-bands th, .voacap-bands td { padding:4px 8px; border:1px solid #e0e0e0; font-size:12px; text-align:center; }
+
+/* 卫星跟踪 */
+.sat-info, .sat-look { margin-bottom:8px; }
+.sat-row { display:flex; gap:8px; padding:3px 0; font-size:13px; }
+.sat-row label { min-width:70px; color:#555; font-weight:500; }
+.sat-row span { font-weight:600; }
+
+table.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+table.data-table th {
+  background: #1a237e;
+  color: #fff;
+  padding: 6px 8px;
+  text-align: center;
+  font-weight: 500;
+  position: sticky;
+  top: 0;
+}
+
+table.data-table td {
+  padding: 5px 8px;
+  border-bottom: 1px solid #e0e0e0;
+  text-align: center;
+}
+
+table.data-table tr:nth-child(even) {
+  background: #fafafa;
+}
+
+table.data-table tr.band-parent {
+  cursor: pointer;
+  user-select: none;
+}
+
+table.data-table tr.band-parent:hover {
+  background: #e3f2fd;
+}
+
+table.data-table tr.band-parent .toggle-icon {
+  font-size: 10px;
+  color: #1a237e;
+  margin-left: 2px;
+}
+
+table.data-table tr.band-sub td {
+  color: #555;
+  font-size: 11px;
+  padding-left: 20px;
+  background: #f5f5f5;
+}
+
+table.data-table tr.band-sub:hover {
+  background: #e8e8e8;
+}
+
+.sub-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.sub-tab {
+  padding: 6px 14px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  background: #fff;
+  transition: all .2s;
+}
+
+.sub-tab:hover {
+  background: #e8eaf6;
+}
+
+.sub-tab.active {
+  background: #1a237e;
+  color: #fff;
+  border-color: #1a237e;
+}
+
+.sub-content {
+  display: none;
+}
+
+.sub-content.active {
+  display: block;
+}
+
+.scroll-table {
+  max-height: 400px;
+  overflow-y: auto;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+}
+
+.radio-group {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.radio-group label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.tooltip {
+  position: relative;
+  cursor: help;
+  border-bottom: 1px dotted #999;
+}
+
+.tooltip:hover::after {
+  content: attr(data-tip);
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #333;
+  color: #fff;
+  padding: 6px 10px;
+  border-radius: 4px;
+  font-size: 11px;
+  white-space: pre-wrap;
+  z-index: 999;
+  max-width: 300px;
+  line-height: 1.4;
+}
+
+#map-container {
+  height: 500px;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+}
+/* MapLibre GL JS 地图容器样式覆盖 */
+#map-container .maplibregl-map {
+  font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+}
+#map-container .maplibregl-ctrl-attrib {
+  font-size: 10px;
+}
+#map-container .maplibregl-popup-content {
+  font-size: 13px;
+  line-height: 1.5;
+  padding: 8px 12px;
+}
+
+.clock-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 8px;
+}
+
+.clock-card {
+  background: #f5f5f5;
+  border-radius: 6px;
+  padding: 8px;
+  text-align: center;
+}
+
+.clock-card .tz-name {
+  font-size: 11px;
+  color: #666;
+  margin-bottom: 2px;
+}
+
+.clock-card .tz-time {
+  font-family: Consolas, monospace;
+  font-size: 18px;
+  font-weight: 700;
+  color: #1a237e;
+}
+
+.morse-display {
+  font-family: Consolas, monospace;
+  font-size: 20px;
+  font-weight: 700;
+  color: #2e7d32;
+  background: #fffde7;
+  padding: 12px;
+  border-radius: 6px;
+  min-height: 50px;
+  letter-spacing: 2px;
+}
+
+.cw-key {
+  width: 200px;
+  height: 60px;
+  background: #e0e0e0;
+  border: 3px solid #999;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  font-weight: 700;
+  user-select: none;
+  transition: background .1s;
+}
+
+.cw-key:active,
+.cw-key.pressed {
+  background: #ff9999;
+  border-color: #c62828;
+}
+
+.log-table-wrap {
+  max-height: 350px;
+  overflow-y: auto;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+}
+
+.mode-ref {
+  margin-bottom: 12px;
+}
+
+.mode-ref h4 {
+  color: #1a237e;
+  font-size: 13px;
+  margin: 8px 0 4px;
+}
+
+.mode-item {
+  display: flex;
+  gap: 8px;
+  padding: 3px 0;
+  font-size: 12px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.mode-item .abbr {
+  min-width: 140px;
+  font-weight: 600;
+  color: #333;
+}
+
+.mode-item .name {
+  min-width: 100px;
+  color: #666;
+}
+
+.mode-item .desc {
+  color: #888;
+  flex: 1;
+}
+
+.license-info {
+  font-size: 12px;
+  color: #555;
+  padding: 8px;
+  background: #fffde7;
+  border-radius: 4px;
+  margin-top: 8px;
+}
+
+@media (max-width: 768px) {
+  .form-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  /* 移动端垂直布局：重置字段分隔margin */
+  .form-row input + label,
+  .form-row select + label,
+  .form-row span + label,
+  .form-row button + label {
+    margin-left: 0;
+    margin-top: 6px;
+  }
+
+  .tab-btn {
+    padding: 8px 10px;
+    font-size: 12px;
+  }
+
+  /* 移动端卡片内边距缩小 */
+  .card {
+    padding: 10px;
+  }
+
+  /* 移动端表格可横向滚动 */
+  .card table {
+    display: block;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* 移动端Canvas自适应 */
+  canvas {
+    max-width: 100%;
+    height: auto !important;
+  }
+}
+</style>
+</head>
+<body>
+<div class="header">
+<h1>📻 HAM Radio Toolbox</h1>
+<span class="subtitle">业余无线电工具箱</span>
+<div class="header-spacer"></div>
+</div>
+<div class="tab-bar" id="tabBar">
+<button class="tab-btn active" data-tab="freq">频率/频段</button>
+<button class="tab-btn" data-tab="rf">射频工具</button>
+<button class="tab-btn" data-tab="call">呼号查询</button>
+<button class="tab-btn" data-tab="grid">区域</button>
+<button class="tab-btn" data-tab="log">通联</button>
+<button class="tab-btn" data-tab="map">通联地图</button>
+<button class="tab-btn" data-tab="ref">参考</button>
+<button class="tab-btn" data-tab="cw">CW练习</button>
+
+<button class="tab-btn" data-tab="voacap">传播预测</button>
+<button class="tab-btn" data-tab="satellite">卫星跟踪</button>
+</div>
+
+<!-- Tab 1: 频率/频段 -->
+<div class="tab-content active" id="tab-freq">
+<div class="card">
+<h3>频率查询</h3>
+<div class="form-row">
+<select id="freqSearchMode" data-change="onSearchModeChange">
+<option value="freq">频率</option>
+<option value="range">区间</option>
+</select>
+<input type="text" id="freqInput" placeholder="频率值" pattern="[0-9.]+" title="请输入数字" style="width:120px" oninput="this.value=this.value.replace(/[^0-9.]/g,'')" data-enter="freqQuery">
+<span id="freqSep" style="display:none"> ~ </span>
+<input type="text" id="freqInput2" placeholder="上限" pattern="[0-9.]+" title="请输入数字" style="width:120px;display:none" oninput="this.value=this.value.replace(/[^0-9.]/g,'')" data-enter="freqQuery">
+<select id="freqUnit">
+<option value="MHz" selected>MHz</option>
+<option value="kHz">kHz</option>
+<option value="GHz">GHz</option>
+</select>
+<button class="btn btn-primary" data-action="freqQuery">查询</button>
+<button class="btn btn-secondary" data-action="freqClear">清空</button>
+</div>
+<div class="result-box" id="freqResult">输入频率或频率区间，查询所属业余频段信息。</div>
+</div>
+<div class="card">
+<h3>业余频率划分表（中国）</h3>
+<div class="scroll-table">
+<table class="data-table" id="bandTable">
+<thead><tr><th>波段</th><th>频段</th><th>下限(MHz)</th><th>上限(MHz)</th><th>业余业务地位</th></tr></thead>
+<tbody></tbody>
+</table>
+</div>
+<div class="license-info">A类: 30-3000MHz ≤25W | B类: 各业余频段，30MHz以下 ≤15W，30MHz以上 ≤25W | C类: 各业余频段，30MHz以下 ≤1000W，30MHz以上 ≤25W</div>
+</div>
+<div class="card">
+<h3>通信模式参考</h3>
+<div id="modesRef"></div>
+</div>
+</div>
+
+<!-- Tab 2: 射频工具 -->
+<div class="tab-content" id="tab-rf">
+<div class="card">
+<h3>天线计算</h3>
+<div class="form-row">
+<label>频率 (MHz):</label>
+<input type="text" id="antFreq" pattern="[0-9.]+" title="请输入频率数字" style="width:120px" placeholder="如 14.150" oninput="this.value=this.value.replace(/[^0-9.]/g,'')" data-enter="antennaCalc">
+<button class="btn btn-primary" data-action="antennaCalc">计算</button>
+<button class="btn btn-secondary" data-action="clearTarget" data-target="antResult">清空</button>
+</div>
+<div class="result-box" id="antResult">输入频率后点击"计算"查看天线尺寸。</div>
+</div>
+<div class="card">
+<h3>功率转换</h3>
+<div class="form-row">
+<label>数值:</label>
+<input type="text" id="powVal" pattern="[0-9.+-]+" title="请输入功率值" style="width:120px" oninput="this.value=this.value.replace(/[^0-9.+-]/g,'')" data-enter="powerConvert">
+<select id="powUnit">
+<option value="W" selected>W → dBm/dBW</option>
+<option value="dBm">dBm → W</option>
+<option value="dBW">dBW → W</option>
+</select>
+<button class="btn btn-primary" data-action="powerConvert">转换</button>
+</div>
+<div class="result-box" id="powResult">输入功率值后点击"转换"查看换算结果。</div>
+</div>
+<div class="card">
+<h3>SWR 计算</h3>
+<div class="form-row">
+<label>正向功率 (W):</label>
+<input type="text" id="swrFw" pattern="[0-9.]+" title="请输入正向功率" style="width:100px" oninput="this.value=this.value.replace(/[^0-9.]/g,'')">
+<label>反射功率 (W):</label>
+<input type="text" id="swrRw" pattern="[0-9.]+" title="请输入反射功率" style="width:100px" oninput="this.value=this.value.replace(/[^0-9.]/g,'')">
+<button class="btn btn-primary" data-action="swrFromPower">由功率→SWR</button>
+</div>
+<div class="form-row">
+<label>SWR:</label>
+<input type="text" id="swrVal" pattern="[0-9.]+" title="请输入SWR值" style="width:80px" oninput="this.value=this.value.replace(/[^0-9.]/g,'')">
+<label>正向功率 (W):</label>
+<input type="text" id="swrFw2" pattern="[0-9.]+" title="请输入正向功率" style="width:100px" oninput="this.value=this.value.replace(/[^0-9.]/g,'')">
+<button class="btn btn-primary" data-action="swrToReflect">由SWR→反射功率</button>
+</div>
+<div class="result-box" id="swrResult">输入正向/反射功率或SWR值后点击对应按钮计算。</div>
+</div>
+<div class="card">
+<h3>馈线损耗</h3>
+<div class="form-row">
+<label>型号:</label>
+<select id="coaxType"></select>
+<label>频率 (MHz):</label>
+<input type="text" id="coaxFreq" pattern="[0-9.]+" title="请输入频率" style="width:100px" oninput="this.value=this.value.replace(/[^0-9.]/g,'')">
+<label>长度 (m):</label>
+<input type="text" id="coaxLen" pattern="[0-9.]+" title="请输入长度" style="width:80px" oninput="this.value=this.value.replace(/[^0-9.]/g,'')">
+<button class="btn btn-primary" data-action="coaxCalc">计算</button>
+</div>
+<div class="result-box" id="coaxResult">选择馈线型号并输入频率和长度后点击"计算"。</div>
+<h3 style="margin-top:8px">常见馈线衰减参考 (dB/100m)</h3>
+<div class="scroll-table" style="max-height:200px">
+<table class="data-table" id="coaxRefTable">
+<thead><tr><th>型号</th><th>100 MHz</th><th>400 MHz</th><th>1000 MHz</th></tr></thead>
+<tbody></tbody>
+</table>
+</div>
+</div>
+<div class="card">
+<h3>Smith圆图</h3>
+<div class="form-row">
+<label style="min-width:auto">R</label><input type="text" id="smithR" style="width:80px" placeholder="如 50" oninput="this.value=this.value.replace(/[^0-9.]/g,'')"><span class="unit">Ω</span>
+<label style="min-width:auto">jX</label><input type="text" id="smithX" style="width:80px" placeholder="如 25" oninput="this.value=this.value.replace(/[^0-9.\-]/g,'')"><span class="unit">Ω</span>
+<label style="min-width:auto">Z₀</label><input type="text" id="smithZ0" style="width:60px" value="50" oninput="this.value=this.value.replace(/[^0-9.]/g,'')"><span class="unit">Ω</span>
+<button class="btn btn-primary" data-action="smithCalc">定位</button>
+<button class="btn btn-secondary" data-action="smithClear">清空</button>
+</div>
+<div class="help-box">
+<p><b>Smith圆图</b>是射频工程中用于阻抗匹配的图形工具，将归一化阻抗映射到反射系数平面。</p>
+<p><b>使用方法：</b></p>
+<ul>
+<li>输入阻抗的电阻分量R和电抗分量jX（单位Ω），设置参考阻抗Z₀，点击"定位"在圆图上标出该点</li>
+<li>也可直接点击圆图上任意位置，自动读取该点的归一化阻抗</li>
+<li>蓝色圆弧=等电阻圆，红色圆弧=等电抗圆</li>
+<li>圆图中心点=完美匹配（Γ=0），越靠近边缘反射越大</li>
+<li>上半圆=感性（jX>0），下半圆=容性（jX&lt;0）</li>
+</ul>
+</div>
+<canvas id="smithCanvas" style="display:block;margin:0 auto;border:1px solid #e0e0e0;border-radius:6px;cursor:crosshair;max-width:100%"></canvas>
+<div class="result-box" id="smithResult" style="margin-top:8px">输入阻抗参数后点击"计算"查看史密斯圆图。</div>
+</div>
+</div>
+
+<!-- Tab: 呼号查询 -->
+<div class="tab-content" id="tab-call">
+<div class="card">
+<h3>呼号查询 <span id="callStatus" style="font-weight:400;color:#888;font-size:12px"></span></h3>
+<div class="form-row">
+<label>呼号:</label>
+<input type="text" id="callInput" style="width:160px" placeholder="如 BD4TQR, W1AW" oninput="this.value=this.value.replace(/[^A-Za-z0-9/]/g,'').toUpperCase()" data-enter="callLookup">
+<button class="btn btn-primary" data-action="callLookup">查询</button>
+<button class="btn btn-secondary" data-action="callClear">清空</button>
+</div>
+<p style="font-size:11px;color:#888;margin-bottom:8px">支持在线查询(HamQTH)和本地前缀数据库。输入呼号后回车或点击查询。</p>
+<div class="result-box" id="callResult">输入呼号后点击"查询"查看信息。</div>
+</div>
+</div>
+
+<!-- Tab 3: 区域 -->
+<div class="tab-content" id="tab-grid">
+<div class="card">
+<h3>经纬度 → 网格</h3>
+<div class="form-row">
+<label>输入格式:</label>
+<select id="latLonMode" data-change="switchLatLonMode">
+<option value="decimal">十进制度 (DD)</option>
+<option value="dms">度分秒 (DMS)</option>
+</select>
+</div>
+<div class="form-row" id="decimalRow">
+<label>纬度:</label>
+<input type="text" id="latIn" pattern="-?[0-9.]+(\s*[0-9.]*)*" title="请输入纬度" style="width:140px" placeholder="如 39.9042">
+<label>经度:</label>
+<input type="text" id="lonIn" pattern="-?[0-9.]+(\s*[0-9.]*)*" title="请输入经度" style="width:140px" placeholder="如 116.4074">
+</div>
+<div class="form-row" id="dmsRow" style="display:none">
+<label>纬度:</label>
+<input type="text" id="latDeg" style="width:50px" placeholder="度">°
+<input type="text" id="latMin" style="width:50px" placeholder="分">&prime;
+<input type="text" id="latSec" style="width:60px" placeholder="秒">&Prime;
+<label>经度:</label>
+<input type="text" id="lonDeg" style="width:50px" placeholder="度">°
+<input type="text" id="lonMin" style="width:50px" placeholder="分">&prime;
+<input type="text" id="lonSec" style="width:60px" placeholder="秒">&Prime;
+</div>
+<div class="form-row">
+<button class="btn btn-primary" data-action="llToGrid">转换</button>
+<button class="btn" data-action="getMyLocation" title="使用浏览器定位获取当前经纬度">📍 定位</button>
+</div>
+</div>
+<div class="card">
+<h3>网格 → 经纬度</h3>
+<div class="form-row">
+<label>网格 (如 OM89):</label>
+<input type="text" id="gridIn" pattern="[A-Za-z]{2}[0-9]{2}([A-Za-z]{2})?" title="如 OM89 或 OM89MM" style="width:140px" placeholder="如 OM89 或 OM89MM" data-enter="gridToLl">
+<button class="btn btn-primary" data-action="gridToLl">转换</button>
+</div>
+</div>
+<div class="card">
+<h3>网格间距离/方位</h3>
+<div class="form-row">
+<label>网格1:</label>
+<input type="text" id="distG1" pattern="[A-Za-z]{2}[0-9]{2}([A-Za-z]{2})?" title="如 OM89" style="width:120px" placeholder="如 OM89" data-enter="gridDistance">
+<label>网格2:</label>
+<input type="text" id="distG2" pattern="[A-Za-z]{2}[0-9]{2}([A-Za-z]{2})?" title="如 FN30" style="width:120px" placeholder="如 FN30" data-enter="gridDistance">
+<button class="btn btn-primary" data-action="gridDistance">计算</button>
+</div>
+</div>
+<div class="result-box" id="gridResult">输入网格坐标或经纬度后点击对应按钮转换。</div>
+</div>
+
+<!-- Tab 4: 通联 -->
+<div class="tab-content" id="tab-log">
+<div class="card">
+<h3>世界时钟</h3>
+<div class="clock-grid" id="clockGrid"></div>
+<div style="margin-top:8px">
+<div style="position:relative;display:inline-block">
+<input type="text" id="customTzInput" style="width:240px" placeholder="搜索城市（中文/英文）..." autocomplete="off" data-input="filterClockOptions" data-focus="filterClockOptions" data-blur="hideClockOptions">
+<div id="tzDropdown" style="display:none;position:absolute;top:100%;left:0;z-index:100;background:#fff;border:1px solid #ccc;border-radius:4px;max-height:260px;overflow-y:auto;width:300px;box-shadow:0 4px 12px rgba(0,0,0,.15)"></div>
+</div>
+<button class="btn btn-primary" data-action="addCustomClock">添加</button>
+<button class="btn btn-secondary" data-action="clearCustomClocks">清除自定义</button>
+</div>
+</div>
+<div class="card">
+<h3>新通联记录</h3>
+<div class="form-row">
+<label>* 日期(UTC):</label><input type="date" id="logDate">
+<label>* 时间(UTC):</label><input type="text" id="logTime" pattern="[0-9]{4}" title="UTC时间HHMM格式" style="width:80px" placeholder="HHMM" oninput="this.value=this.value.replace(/[^0-9]/g,'').substring(0,4)">
+<label>* 呼号:</label><input type="text" id="logCall" pattern="[A-Za-z0-9/]+" title="业余电台呼号" style="width:120px" oninput="this.value=this.value.replace(/[^A-Za-z0-9/]/g,'').toUpperCase()">
+<label>* 频率(MHz):</label><input type="text" id="logFreq" pattern="[0-9.]+" title="频率数字" style="width:100px" oninput="this.value=this.value.replace(/[^0-9.]/g,'')">
+</div>
+<div class="form-row">
+<label>* 模式:</label><select id="logMode" data-change="logModeRstPreset"></select>
+<label>RST发送:</label><input type="text" id="logRstS" pattern="[1-5][1-9][1-9]?" title="RST值" style="width:80px" oninput="this.value=this.value.replace(/[^1-9]/g,'').substring(0,3)">
+<label>RST接收:</label><input type="text" id="logRstR" pattern="[1-5][1-9][1-9]?" title="RST值" style="width:80px" oninput="this.value=this.value.replace(/[^1-9]/g,'').substring(0,3)">
+<label>对方姓名:</label><input type="text" id="logName" style="width:120px">
+</div>
+<div class="form-row">
+<label>QTH/网格:</label><input type="text" id="logQth" style="width:180px">
+<label>备注:</label><input type="text" id="logNote" style="width:240px">
+<button class="btn btn-success" id="logAddBtn" data-action="logAdd">添加记录</button>
+<button class="btn btn-secondary" id="logCancelEditBtn" data-action="logCancelEdit" style="display:none">取消编辑</button>
+<button class="btn btn-secondary" data-action="logClearForm">清空</button>
+</div>
+<div class="form-row" style="flex-wrap:wrap;gap:4px 12px">
+<label>我的网格:</label><input type="text" id="logMyGrid" style="width:90px" placeholder="如:OM89AB" pattern="[A-Za-z]{2}\d{2}[A-Za-z]{0,2}" title="Maidenhead网格坐标">
+<label>传播模式:</label><select id="logPropMode" style="width:100px"><option value="">--</option><option value="SPORADIC_E">Sporadic-E</option><option value="TROPO">Tropo</option><option value="AURORA">Aurora</option><option value="METEOR_SCATTER">Meteor</option><option value="SAT">Satellite</option><option value="EME">EME</option><option value="F2_REFLECTION">F2</option><option value="INTERNET">Internet</option></select>
+<label>卫星:</label><input type="text" id="logSatName" style="width:80px" placeholder="如:IO-117">
+<label>卫星模式:</label><input type="text" id="logSatMode" style="width:70px" placeholder="如:V/U">
+<label>收信频率:</label><input type="text" id="logFreqRx" style="width:80px" placeholder="MHz">
+<label>发射功率:</label><input type="text" id="logTxPwr" style="width:60px" placeholder="W">
+</div>
+</div>
+<div class="storage-disclaimer" style="margin-bottom:12px;padding:8px 12px;background:#fff8e1;border-radius:6px;border:1px solid #ffe082;font-size:14px;font-weight:700">
+⚠️ 数据仅存于本地浏览器，请及时导出通联日志备份，本站不对任何数据丢失负责
+</div>
+<div class="card">
+<h3>通联记录 <span id="logCount" style="font-weight:400;color:#888"></span></h3>
+<div class="form-row">
+<input type="text" id="logSearch" style="width:200px" placeholder="搜索呼号/模式/日期..." data-input="logSearchInput" data-enter="logRefreshTable">
+<button class="btn btn-secondary" data-action="logRefreshTable">刷新</button>
+<button class="btn btn-primary" data-action="logExportAdi">导出ADI</button>
+<button class="btn btn-primary" data-action="logExportCabrillo">导出Cabrillo</button>
+<button class="btn btn-primary" data-action="logExportCsv">导出CSV</button>
+<button class="btn btn-primary" data-action="logExportJson">导出JSON</button>
+<button class="btn btn-secondary" data-action="logImportAdi">导入ADI</button>
+<button class="btn btn-secondary" data-action="logBackup">备份</button>
+<button class="btn btn-secondary" data-action="logRestore">恢复</button>
+<button class="btn btn-secondary" data-action="logStats">统计</button>
+<input type="file" id="adiFileInput" accept=".adi,.ADI" style="display:none" data-file-action="logImportAdiFile">
+<input type="file" id="restoreFileInput" accept=".json" style="display:none" data-file-action="logRestoreFile">
+</div>
+<div id="logStatsResult" style="display:none;margin:8px 0;padding:10px;background:#f5f5f5;border-radius:6px;border:1px solid #ddd"></div>
+<div class="log-table-wrap">
+<table class="data-table" id="logTable">
+<thead><tr><th>日期</th><th>时间</th><th>呼号</th><th>频率</th><th>模式</th><th>RST发</th><th>RST收</th><th>姓名</th><th>QTH</th><th>备注</th><th>操作</th></tr></thead>
+<tbody></tbody>
+</table>
+</div>
+</div>
+</div>
+
+<!-- Tab 5: 通联地图 -->
+<div class="tab-content" id="tab-map">
+<div class="card">
+<div class="form-row" style="justify-content:space-between">
+<h3 style="border:none;padding:0;margin:0">通联地图</h3>
+<span id="mapCount" style="font-size:12px;color:#888"></span>
+<button class="btn btn-primary" data-action="mapRender">刷新地图</button>
+</div>
+<div id="map-container"></div>
+</div>
+</div>
+
+<!-- Tab 6: 参考 -->
+<div class="tab-content" id="tab-ref">
+<div class="sub-tabs">
+<div class="sub-tab active" data-sub="qcode" data-action="switchSubTab" data-parent="ref">Q简语</div>
+<div class="sub-tab" data-sub="engabbr" data-action="switchSubTab" data-parent="ref">英文缩略语</div>
+<div class="sub-tab" data-sub="numabbr" data-action="switchSubTab" data-parent="ref">数字缩略语</div>
+</div>
+<div class="sub-content active" id="ref-qcode">
+<div class="card">
+<h3>Q简语查询</h3>
+<div class="form-row">
+<input type="text" id="qcodeSearch" style="width:160px" placeholder="如 QTH" data-enter="abbrevLookup" data-type="qcode">
+<button class="btn btn-primary" data-action="abbrevLookup" data-type="qcode">查询</button>
+</div>
+<div class="result-box" id="qcodeResult">输入Q简语后点击"查询"查看含义。</div>
+</div>
+<div class="card"><h3>Q简语参考表</h3><div class="scroll-table"><table class="data-table" id="qcodeTable"><thead><tr><th>代码</th><th>问句含义</th><th>答句含义</th></tr></thead><tbody></tbody></table></div></div>
+</div>
+<div class="sub-content" id="ref-engabbr">
+<div class="card">
+<h3>英文缩略语查询</h3>
+<div class="form-row">
+<input type="text" id="engabbrSearch" style="width:160px" placeholder="如 CQ" data-enter="abbrevLookup" data-type="engabbr">
+<button class="btn btn-primary" data-action="abbrevLookup" data-type="engabbr">查询</button>
+</div>
+<div class="result-box" id="engabbrResult">输入英文缩写后点击"查询"查看含义。</div>
+</div>
+<div class="card"><h3>英文缩略语参考表</h3><div class="scroll-table"><table class="data-table" id="engabbrTable"><thead><tr><th>缩略语</th><th>中文含义</th><th>英文说明</th></tr></thead><tbody></tbody></table></div></div>
+</div>
+<div class="sub-content" id="ref-numabbr">
+<div class="card">
+<h3>数字缩略语查询</h3>
+<div class="form-row">
+<input type="text" id="numabbrSearch" style="width:160px" placeholder="如 73" data-enter="abbrevLookup" data-type="numabbr">
+<button class="btn btn-primary" data-action="abbrevLookup" data-type="numabbr">查询</button>
+</div>
+<div class="result-box" id="numabbrResult">输入数字缩写后点击"查询"查看含义。</div>
+</div>
+<div class="card"><h3>数字缩略语参考表</h3><div class="scroll-table"><table class="data-table" id="numabbrTable"><thead><tr><th>数字</th><th>中文含义</th><th>英文说明</th></tr></thead><tbody></tbody></table></div></div>
+</div>
+<div class="card">
+<h3>RST 信号报告</h3>
+<div class="form-row">
+<label>RST (如 599):</label>
+<input type="text" id="rstInput" pattern="[1-5][1-9][1-9]?" title="RST值如59或599" style="width:120px" placeholder="如 59 或 599" data-enter="rstQuery">
+<button class="btn btn-primary" data-action="rstQuery">查询</button>
+</div>
+<div class="result-box" id="rstResult">输入信号报告后点击"查询"查看含义。</div>
+</div>
+</div>
+
+<!-- Tab 7: CW练习 -->
+<div class="tab-content" id="tab-cw">
+<div class="card">
+<div class="form-row">
+<label>速度 (WPM):</label>
+<input type="range" id="cwWpm" min="5" max="40" value="20" oninput="document.getElementById('cwWpmLabel').textContent=this.value+' WPM'">
+<span id="cwWpmLabel" style="min-width:60px;font-weight:600">20 WPM</span>
+</div>
+</div>
+<div class="sub-tabs">
+<div class="sub-tab active" data-sub="cw-encode" data-action="switchSubTab" data-parent="cw">文本→摩尔斯</div>
+<div class="sub-tab" data-sub="cw-decode" data-action="switchSubTab" data-parent="cw">摩尔斯→文字</div>
+<div class="sub-tab" data-sub="cw-practice" data-action="switchSubTab" data-parent="cw">随机练习</div>
+<div class="sub-tab" data-sub="cw-koch" data-action="switchSubTab" data-parent="cw">Koch训练</div>
+<div class="sub-tab" data-sub="cw-chart" data-action="switchSubTab" data-parent="cw">码表</div>
+</div>
+<div class="sub-content active" id="cw-cw-encode">
+<div class="card">
+<h3>文本转摩尔斯码</h3>
+<p style="font-size:12px;color:#888;margin-bottom:8px">输入文本 (全角自动转半角; 中文不支持, 以 # 标记)</p>
+<textarea id="cwEncodeIn" rows="3" style="width:100%;padding:8px;font-family:Consolas,monospace;font-size:14px;resize:vertical" placeholder="输入英文文本..."></textarea>
+<div class="form-row" style="margin-top:8px">
+<button class="btn btn-primary" data-action="cwEncode">转换为摩尔斯</button>
+<button class="btn btn-success" data-action="cwPlayEncode">播放</button>
+<button class="btn btn-danger" data-action="cwStopPlay">停止</button>
+</div>
+<div class="morse-display" id="cwEncodeOut" style="margin-top:8px"></div>
+</div>
+</div>
+<div class="sub-content" id="cw-cw-decode">
+<div class="card">
+<h3>摩尔斯码转文字</h3>
+<p style="font-size:12px;color:#888;margin-bottom:8px">输入摩尔斯码 (空格分隔字母, / 分隔单词)</p>
+<textarea id="cwDecodeIn" rows="4" style="width:100%;padding:8px;font-family:Consolas,monospace;font-size:16px;font-weight:bold;resize:vertical" placeholder="如: .... . .-.. .-.. --- / .-- --- .-. .-.. -.."></textarea>
+<div class="form-row" style="margin-top:8px">
+<button class="btn btn-primary" data-action="cwDecode">转换为文字</button>
+<button class="btn btn-secondary" data-action="clearTarget" data-target="cwDecodeIn,cwDecodeOut">清空</button>
+</div>
+<div style="margin-top:12px">
+<p style="font-size:12px;color:#666;margin-bottom:4px">模拟电键: 短按=点(·) 长按=划(-)</p>
+<div class="cw-key" id="cwKeyBtn">电键</div>
+<div class="form-row" style="margin-top:8px;gap:8px;flex-wrap:wrap;align-items:center">
+<label style="font-size:12px;color:#666">长短按阈值:</label>
+<input type="number" id="cwDashThresh" min="30" max="500" step="10" value="120" style="width:68px;font-size:12px;text-align:center;padding:2px 4px"> <span style="font-size:12px;color:#888">ms</span>
+<label style="font-size:12px;color:#666;margin-left:6px">自动空格:</label>
+<input type="number" id="cwSpaceThresh" min="50" max="2000" step="10" value="240" style="width:68px;font-size:12px;text-align:center;padding:2px 4px"> <span style="font-size:12px;color:#888">ms</span>
+<button class="btn btn-secondary" style="font-size:11px;padding:2px 10px;margin-left:6px" data-action="cwSaveKeySettings">保存</button>
+<span id="cwKeySettingsHint" style="font-size:11px;color:#4caf50;margin-left:4px"></span>
+</div>
+</div>
+<div class="result-box" id="cwDecodeOut" style="margin-top:8px">输入莫尔斯电码后点击"解码"。</div>
+</div>
+</div>
+<div class="sub-content" id="cw-cw-practice">
+<div class="card">
+<h3>随机练习</h3>
+<div class="form-row">
+<label>字符集:</label>
+<label><input type="checkbox" id="cwPracAlpha" checked> 字母 A-Z</label>
+<label><input type="checkbox" id="cwPracNum" checked> 数字 0-9</label>
+<label><input type="checkbox" id="cwPracPunct"> 标点符号</label>
+</div>
+<div class="form-row">
+<label>每组字符数:</label>
+<select id="cwPracLen"><option>1</option><option>2</option><option selected>3</option><option>4</option><option>5</option><option>6</option><option>7</option><option>8</option></select>
+<label>重复次数:</label>
+<select id="cwPracCount"><option>1</option><option>2</option><option selected>3</option><option>5</option><option>10</option></select>
+</div>
+<div class="form-row">
+<button class="btn btn-primary" id="cwPracBtn" data-action="cwPracticeStart">开始练习</button>
+<button class="btn btn-danger" data-action="cwStopPlay">停止</button>
+<button class="btn btn-secondary" data-action="cwPracticeReveal">显示答案</button>
+</div>
+<div class="morse-display" id="cwPracDisp" style="margin-top:8px"></div>
+<div class="result-box" id="cwPracLog" style="margin-top:8px;font-size:12px">点击"开始练习"进行CW听抄训练。</div>
+<div class="form-row" style="margin-top:8px">
+<label>你的抄收:</label>
+<input type="text" id="cwPracUser" style="width:200px;font-family:Consolas,monospace;font-size:14px" data-enter="cwPracticeCheck">
+<button class="btn btn-primary" data-action="cwPracticeCheck">检查结果</button>
+<span id="cwPracScore" style="font-weight:700;color:#2e7d32;margin-left:8px"></span>
+</div>
+</div>
+</div>
+<div class="sub-content" id="cw-cw-koch">
+<div class="card">
+<h3>Koch方法训练</h3>
+<p style="font-size:12px;color:#888;margin-bottom:8px">从2个字符开始，连续5轮正确率≥90%自动升级，逐步掌握全部摩尔斯字符。</p>
+<div class="form-row">
+<label>级别:</label>
+<input type="number" id="kochLevel" min="1" max="39" value="1" style="width:60px;font-size:13px;text-align:center;padding:2px 4px">
+<span style="font-size:12px;color:#888">/ <span id="kochMaxLevel">39</span></span>
+<label style="margin-left:12px">当前字符:</label>
+<span id="kochChars" style="font-family:Consolas,monospace;font-size:14px;font-weight:700;letter-spacing:3px;color:#1565c0">K M</span>
+</div>
+<div class="form-row">
+<label><input type="checkbox" id="kochAutoSpeed"> 速度渐变（低级别自动降速）</label>
+</div>
+<div class="form-row">
+<label>自定义字符集:</label>
+<input type="text" id="kochCustomInput" style="width:180px;font-family:Consolas,monospace;font-size:13px;letter-spacing:2px;padding:2px 6px" placeholder="如: ABCDEF123" maxlength="50">
+<button class="btn btn-secondary" style="font-size:11px;padding:2px 10px" data-action="kochSetCustom">应用</button>
+<span style="font-size:11px;color:#888;margin-left:4px">留空恢复Koch标准顺序</span>
+</div>
+<div class="form-row">
+<button class="btn btn-primary" data-action="kochStart">开始训练</button>
+<button class="btn btn-success" data-action="kochNextRound">下一轮</button>
+<button class="btn btn-danger" data-action="cwStopPlay">停止</button>
+<button class="btn btn-secondary" data-action="kochReveal">显示答案</button>
+<button class="btn btn-secondary" data-action="kochSkipLevel">跳级</button>
+<button class="btn btn-secondary" data-action="kochReset">重置</button>
+</div>
+<div class="morse-display" id="kochDisp" style="margin-top:8px"></div>
+<div class="result-box" id="kochLog" style="margin-top:8px;font-size:12px">Koch方法：从2个字符开始，达标后自动增加新字符，直到掌握全部字符。</div>
+<div class="form-row" style="margin-top:8px">
+<label>你的抄收:</label>
+<input type="text" id="kochUser" style="width:200px;font-family:Consolas,monospace;font-size:14px" data-enter="kochCheck">
+<button class="btn btn-primary" data-action="kochCheck">检查结果</button>
+<span id="kochScore" style="font-weight:700;color:#2e7d32;margin-left:8px"></span>
+</div>
+<div style="margin-top:8px;font-size:11px;color:#888">
+<span id="kochProgress">连续达标: 0/5 | 总轮数: 0</span>
+</div>
+</div>
+</div>
+<div class="sub-content" id="cw-cw-chart">
+<div class="card"><h3>摩尔斯码表</h3><div class="scroll-table"><table class="data-table" id="morseTable"><thead><tr><th>字符</th><th>摩尔斯码</th></tr></thead><tbody></tbody></table></div></div>
+</div>
+</div>
+
+<!-- Tab 8: 工具 -->
+
+
+<!-- Tab: 传播预测 -->
+<div class="tab-content" id="tab-voacap">
+<div class="card">
+<h3>太阳通量与传播条件 <span id="solarStatus" style="font-weight:400;color:#888;font-size:12px"></span></h3>
+<div class="form-row">
+<button class="btn btn-primary" data-action="solarRefresh">刷新数据</button>
+<button class="btn btn-secondary" data-action="solarClearCache">清除缓存</button>
+</div>
+<div id="solarValues" style="margin:8px 0"></div>
+<canvas id="solarCanvas" style="display:block;margin:0 auto;border:1px solid #e0e0e0;border-radius:6px;max-width:100%"></canvas>
+<div id="propResult" style="margin-top:12px"></div>
+<p style="font-size:11px;color:#888;margin-top:6px">数据来源: <a href="https://www.swpc.noaa.gov/" target="_blank">NOAA SWPC</a> | SFI=太阳通量指数(Solar Flux Index), Sn=太阳黑子数(Sunspot Number) | 曲线显示近期趋势</p>
+<p style="font-size:10px;color:#b8860b;margin-top:2px">💡 此处数据为 NOAA 观测值(Observed)，hamqsl.com 图表使用调整值(Adjusted)，两者略有差异属正常现象</p>
+</div>
+<div class="card">
+<h3>VOACAP 传播预测</h3>
+<div class="help-box">
+<p>基于 VOACAP 模型的短波传播预测，输入收发双方网格坐标和参数，预测最佳通信频段。</p>
+<p><b>使用方法：</b></p>
+<ul>
+<li>输入发射方和接收方的 Maidenhead 网格坐标（如 OM89、FN31）</li>
+<li>设置工作频率（MHz）、发射功率（W）、太阳通量指数（SFI）</li>
+<li>可选设置 UTC 小时和天线增益（dBi），留空则使用当前时间和 0 dBi</li>
+<li>点击"运行预测"查看 MUF/FOT/LUF、信号强度、SNR 和推荐频段</li>
+<li>若已刷新太阳通量数据，可点击"填充当前SFI"自动填入</li>
+</ul>
+</div>
+<div class="form-row">
+<label>发射方网格:</label>
+<input type="text" id="voacapTxGrid" style="width:120px" placeholder="如 OM89" title="Maidenhead网格坐标，4或6位（如 OM89 或 OM89MM）" pattern="[A-Za-z]{2}[0-9]{2}([A-Za-z]{2})?" data-enter="voacapRun">
+<label>接收方网格:</label>
+<input type="text" id="voacapRxGrid" style="width:120px" placeholder="如 FN31" title="Maidenhead网格坐标，4或6位（如 FN31 或 FN31pr）" pattern="[A-Za-z]{2}[0-9]{2}([A-Za-z]{2})?" data-enter="voacapRun">
+</div>
+<div class="form-row">
+<label>频率 MHz:</label>
+<input type="number" id="voacapFreq" style="width:100px" min="1" max="54" step="0.1" placeholder="如14" title="工作频率，1-54 MHz，如14">
+<label>功率 W:</label>
+<input type="number" id="voacapTxPower" style="width:100px" min="1" max="1500" step="1" placeholder="如100" title="发射功率，1-1500 瓦，如100">
+<label>SFI:</label>
+<input type="number" id="voacapSfi" style="width:100px" min="50" max="300" step="1" placeholder="如100" title="太阳通量指数 Solar Flux Index，通常 50-300，如100">
+</div>
+<div class="form-row">
+<label>UTC 小时:</label>
+<input type="number" id="voacapHour" style="width:80px" min="0" max="23" step="1" placeholder="当前" title="UTC时间小时数，留空使用当前时间">
+<label>增益 dBi:</label>
+<input type="number" id="voacapGain" style="width:100px" step="0.1" placeholder="如0" title="天线增益（dBi），偶极子约 2.15 dBi，如0">
+</div>
+<div class="form-row">
+<button class="btn btn-primary" data-action="voacapRun">运行预测</button>
+<button class="btn btn-secondary" data-action="voacapFillSfi">填充当前SFI</button>
+<button class="btn btn-secondary" data-action="voacapClear">清空</button>
+<label style="margin-left:12px;font-size:13px">预测模式:</label>
+<select id="voacapMode" style="width:140px">
+<option value="local">本地简化模型</option>
+<option value="online">VOACAP在线API</option>
+</select>
+</div>
+<div id="voacapResult" style="margin-top:10px">填写收发双方网格坐标和参数后点击"运行预测"。</div>
+</div>
+<div class="card">
+<h3>灰线指示 <span style="font-weight:400;color:#888;font-size:12px">Gray-line</span></h3>
+<p style="font-size:12px;color:#666;margin-bottom:6px">灰线是日出日落时分太阳照射区域的过渡带，有利于远距离(DX)短波传播。橙线表示晨昏线位置。</p>
+<div id="grayLineResult" style="margin-top:8px">加载中...</div>
+<div id="grayLineMap" style="height:300px;margin-top:8px;border-radius:4px;overflow:hidden"></div>
+</div>
+</div>
+
+<!-- Tab: 卫星跟踪 -->
+<div class="tab-content" id="tab-satellite">
+<div class="card">
+<h3>卫星跟踪</h3>
+<div class="help-box">
+<p>选择业余无线电卫星，查看实时位置和过境预测。支持 ISS、SO-50、AO-91 等热门卫星。</p>
+<p><b>多卫星跟踪：</b>TLE/N2YO模式下支持同时跟踪多颗卫星，点击卫星名称切换跟踪状态。</p>
+<p><b>数据源（自选）：</b></p>
+<ul>
+<li><b>WTIA免费API</b>：ISS实时位置数据，无需注册，即开即用（仅支持ISS）</li>
+<li><b>TLE本地计算</b>：使用Celestrak TLE数据+satellite.js库本地计算卫星位置（自动选择SGP4/SDP4算法），无需API Key，支持所有卫星，离线时自动使用缓存TLE数据</li>
+<li><b>N2YO高级API</b>：多卫星实时位置+过境预测，需免费注册获取API Key（<a href="https://www.n2yo.com/api/" target="_blank" style="color:#1a237e">注册地址</a>，每小时1000次）</li>
+</ul>
+<p><b>使用方法：</b></p>
+<ul>
+<li>选择数据源：WTIA仅支持ISS；TLE本地计算支持所有卫星且无需Key；N2YO支持所有卫星+过境预测</li>
+<li>选择N2YO时需先配置API Key</li>
+<li>从下拉框选择目标卫星，系统将自动开始实时跟踪（每5秒刷新）</li>
+<li>输入观测者网格坐标以计算仰角和方位角，留空则默认北京(OM89)</li>
+<li>设置最小仰角阈值（默认10°），低于此角度的过境将被过滤</li>
+<li>点击"预测过境"查看未来24小时可见过境时间表（需N2YO）</li>
+</ul>
+</div>
+<div class="form-row">
+<label>数据源:</label>
+<select id="satApiSource" style="width:200px" data-change="satSwitchApiSource" title="选择API数据源">
+<option value="wtia">WTIA 免费API（仅ISS）</option>
+<option value="tle">TLE 本地计算（satellite.js）</option>
+<option value="n2yo">N2YO 高级API（需Key）</option>
+</select>
+<span id="satApiHint" style="font-size:12px;margin-left:8px;color:#2196F3">WTIA免费API仅支持ISS，其他卫星请选择N2YO</span>
+</div>
+<div class="form-row" id="satApiKeyRow">
+<label>N2YO Key:</label>
+<input type="text" id="satApiKey" style="width:260px" placeholder="N2YO API Key（选择N2YO数据源时需要）" title="N2YO API Key，免费注册 https://www.n2yo.com/api/ 获取" data-enter="satSaveApiKey">
+<button class="btn btn-secondary" data-action="satSaveApiKey">保存</button>
+</div>
+<div class="form-row" id="satSelectRow" style="align-items:flex-start">
+<label style="margin-top:6px">选择卫星:</label>
+<div id="satSelectPanel" style="flex:1;max-width:340px">
+<input type="text" id="satSearch" placeholder="搜索卫星名称或NORAD编号..." style="width:100%;padding:6px 8px;border:1px solid #ccc;border-radius:4px;box-sizing:border-box;font-size:13px">
+<div id="satList" style="max-height:220px;overflow-y:auto;border:1px solid #ddd;border-radius:4px;margin-top:4px;background:#fff">
+<div style="color:#888;padding:8px;font-size:12px">请先选择数据源</div>
+</div>
+<div id="satSelected" style="margin-top:4px;font-size:12px;color:#888">未选择卫星</div>
+</div>
+</div>
+<div class="form-row">
+<label>观测者网格:</label>
+<input type="text" id="satObsGrid" style="width:120px" placeholder="如 OM89" value="" title="观测者 Maidenhead 网格坐标，用于计算仰角/方位角" pattern="[A-Za-z]{2}[0-9]{2}([A-Za-z]{2})?">
+<button class="btn btn-secondary" data-action="satUpdatePosition" title="使用输入的网格坐标重新计算">确认</button>
+<button class="btn" data-action="satGetMyLocation" title="使用浏览器定位获取当前网格坐标">📍 定位</button>
+<label>最小仰角:</label>
+<input type="number" id="satMinElev" style="width:80px" value="10" min="0" max="90" step="1" title="过境预测最低仰角阈值（度）">
+<span class="unit">°</span>
+</div>
+<div class="form-row">
+<button class="btn btn-primary" data-action="satPredictPasses">预测过境</button>
+<button class="btn btn-secondary" data-action="satClear">清空</button>
+</div>
+<div id="satPosition" style="margin-top:10px"><p style="color:#888">请选择卫星和填写观测者网格坐标后查看实时位置。</p></div>
+</div>
+<div class="card">
+<h3>地面轨迹</h3>
+<p style="font-size:12px;color:#888;margin-bottom:6px">显示卫星地面轨迹（仅TLE本地计算模式），使用OpenStreetMap地图</p>
+<div class="form-row">
+<label>轨道时长:</label>
+<select id="satGtDuration" style="width:120px">
+<option value="6">6 小时</option>
+<option value="12">12 小时</option>
+<option value="24" selected>24 小时</option>
+<option value="48">48 小时</option>
+<option value="72">72 小时</option>
+</select>
+<button class="btn btn-primary" data-action="satShowGroundTrack">显示地面轨迹</button>
+<span id="satGroundTrackStatus" style="font-size:12px;color:#888;margin-left:8px"></span>
+</div>
+<div id="satGroundTrackMap" style="height:400px;margin-top:8px;border-radius:4px;overflow:hidden"></div>
+</div>
+<div class="card">
+<h3>过境预测结果</h3>
+<div id="satPasses">
+<p style="color:#888">选择卫星后点击"预测过境"查看未来24小时可见过境。</p>
+</div>
+</div>
+</div>
+
+<footer class="site-footer">
+  <div class="footer-ai-notice">
+    🤖 本工具部分内容由人工智能辅助生成，仅供参考，不构成专业无线电操作建议。
+  </div>
+  <div class="footer-cc">
+    <span>本作品采用</span>
+    <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh-hans" target="_blank" rel="license noopener noreferrer">CC BY-NC-SA 4.0</a><img src="https://mirrors.creativecommons.org/presskit/icons/cc.svg" alt="CC" style="max-width:1em;max-height:1em;margin-left:.2em;vertical-align:middle"><img src="https://mirrors.creativecommons.org/presskit/icons/by.svg" alt="BY" style="max-width:1em;max-height:1em;margin-left:.2em;vertical-align:middle"><img src="https://mirrors.creativecommons.org/presskit/icons/nc.svg" alt="NC" style="max-width:1em;max-height:1em;margin-left:.2em;vertical-align:middle"><img src="https://mirrors.creativecommons.org/presskit/icons/sa.svg" alt="SA" style="max-width:1em;max-height:1em;margin-left:.2em;vertical-align:middle">
+    <span>协议发布</span>
+  </div>
+</footer>
+
+<div class="status-bar" id="statusBar">就绪</div>
+
+<!-- 启动诊断：独立于ES Module系统，即使app.js加载失败也能报告错误 -->
+<script>
+(function() {
+    // 检测file://协议（ES Module不支持）
+    if (location.protocol === 'file:') {
+        var el = document.getElementById('statusBar');
+        if (el) {
+            el.textContent = '⚠️ 错误：不能直接打开HTML文件，请通过HTTP服务器访问（如 python -m http.server 8080）';
+            el.style.color = '#e74c3c';
+        }
+        console.error('[HAM] ES Modules不支持file://协议，请使用HTTP服务器');
+        return;
+    }
+    // 标记boot()是否完成
+    window.__HAM_BOOTED__ = false;
+    // 8秒超时检测
+    window.__HAM_BOOT_TIMEOUT__ = setTimeout(function() {
+        if (!window.__HAM_BOOTED__) {
+            var el = document.getElementById('statusBar');
+            if (el) {
+                el.textContent = '⚠️ 应用启动超时，请按F12打开控制台查看错误';
+                el.style.color = '#e74c3c';
+            }
+            // 尝试动态import诊断模块加载失败原因
+            import('./js/app.js').catch(function(err) {
+                console.error('[HAM 诊断] app.js模块加载失败:', err);
+                if (el) {
+                    var msg = err.message || String(err);
+                    el.textContent = '⚠️ 模块加载失败: ' + msg.substring(0, 100);
+                }
+            });
+        }
+    }, 8000);
+    // 捕获未处理的Promise rejection
+    window.addEventListener('unhandledrejection', function(e) {
+        console.error('[HAM 诊断] 未捕获Promise错误:', e.reason);
+        var el = document.getElementById('statusBar');
+        if (el && !window.__HAM_BOOTED__) {
+            var msg = e.reason && e.reason.message ? e.reason.message : String(e.reason || '');
+            el.textContent = '⚠️ 加载错误: ' + msg.substring(0, 80);
+            el.style.color = '#e74c3c';
+        }
+    });
+})();
+</script>
+<script type="module" src="js/app.js?v=20260801"></script>
+</body>
+</html>
