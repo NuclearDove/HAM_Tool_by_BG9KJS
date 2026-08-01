@@ -130,31 +130,31 @@ const ACTION_MAP = {
   // 卫星跟踪
   satSwitchApiSource: () => {
     if (_m.Satellite) { _m.Satellite.switchApiSource(); return; }
-    import('./ham-satellite.js?v=20260730').then(mod => { _m.Satellite = mod; mod.init(); mod.switchApiSource(); });
+    import('./ham-satellite.js?v=20260802').then(mod => { _m.Satellite = mod; mod.init(); mod.switchApiSource(); });
   },
   satPredictPasses: () => {
     if (_m.Satellite) { _m.Satellite.predictPasses(); return; }
-    import('./ham-satellite.js?v=20260730').then(mod => { _m.Satellite = mod; mod.init(); mod.predictPasses(); });
+    import('./ham-satellite.js?v=20260802').then(mod => { _m.Satellite = mod; mod.init(); mod.predictPasses(); });
   },
   satClear: () => {
     if (_m.Satellite) { _m.Satellite.clearSatellite(); return; }
-    import('./ham-satellite.js?v=20260730').then(mod => { _m.Satellite = mod; mod.init(); mod.clearSatellite(); });
+    import('./ham-satellite.js?v=20260802').then(mod => { _m.Satellite = mod; mod.init(); mod.clearSatellite(); });
   },
   satGetMyLocation: () => {
     if (_m.Satellite) { _m.Satellite.getMyLocation(); return; }
-    import('./ham-satellite.js?v=20260730').then(mod => { _m.Satellite = mod; mod.init(); mod.getMyLocation(); });
+    import('./ham-satellite.js?v=20260802').then(mod => { _m.Satellite = mod; mod.init(); mod.getMyLocation(); });
   },
   satSaveApiKey: () => {
     if (_m.Satellite) { _m.Satellite.saveApiKey(); return; }
-    import('./ham-satellite.js?v=20260730').then(mod => { _m.Satellite = mod; mod.init(); mod.saveApiKey(); });
+    import('./ham-satellite.js?v=20260802').then(mod => { _m.Satellite = mod; mod.init(); mod.saveApiKey(); });
   },
   satUpdatePosition: () => {
     if (_m.Satellite) { _m.Satellite.updatePosition(); return; }
-    import('./ham-satellite.js?v=20260730').then(mod => { _m.Satellite = mod; mod.init(); mod.updatePosition(); });
+    import('./ham-satellite.js?v=20260802').then(mod => { _m.Satellite = mod; mod.init(); mod.updatePosition(); });
   },
   satShowGroundTrack: () => {
     if (_m.Satellite) { _m.Satellite.showGroundTrack(); return; }
-    import('./ham-satellite.js?v=20260730').then(mod => { _m.Satellite = mod; mod.init(); mod.showGroundTrack(); });
+    import('./ham-satellite.js?v=20260802').then(mod => { _m.Satellite = mod; mod.init(); mod.showGroundTrack(); });
   },
   // 子Tab切换
   switchSubTab: (el) => switchSubTab(el, el.dataset.parent || 'ref'),
@@ -223,7 +223,7 @@ function initTabs() {
         import('./ham-voacap.js').then(mod => { _m.Voacap = mod; mod.init(); }).catch((e) => console.error('[HAM] Voacap load failed:', e));
       }
       if (tab === 'satellite') {
-        const p = _m.Satellite ? Promise.resolve(_m.Satellite) : import('./ham-satellite.js?v=20260730').then(mod => { _m.Satellite = mod; return mod; });
+        const p = _m.Satellite ? Promise.resolve(_m.Satellite) : import('./ham-satellite.js?v=20260802').then(mod => { _m.Satellite = mod; return mod; });
         p.then(mod => mod.init()).catch((e) => console.error('[HAM] Satellite load failed:', e));
       }
     });
@@ -263,6 +263,7 @@ async function boot() {
     import('./ham-map.js').then(mod => { _m.Map = mod; safeInit('Map', mod); setTimeout(() => mod.mapRender(), 100); }).catch((e) => console.error('[HAM] Map load failed:', e));
   }
   setStatus('HAM Radio Toolbox 就绪');
+  window.__HAM_BOOTED__ = true;
 }
 // DOM就绪后启动
 if (document.readyState === "loading") {

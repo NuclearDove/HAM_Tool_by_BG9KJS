@@ -696,7 +696,16 @@ export async function showGroundTrack() {
             observer = { lat: coord.lat, lon: coord.lon };
     }
     // 渲染地面轨迹（async，等待地图加载完成）
-    await renderGroundTrack(mapContainer, points, currentPos, observer, currentSat.name);
+    try {
+        await renderGroundTrack(mapContainer, points, currentPos, observer, currentSat.name);
+    } catch (renderErr) {
+        console.error('[HAM] 地面轨迹渲染失败:', renderErr);
+        const errMsg = renderErr && renderErr.message ? renderErr.message : String(renderErr || '');
+        if (statusEl)
+            statusEl.textContent = '地面轨迹渲染失败: ' + errMsg;
+        showToast('地面轨迹渲染失败: ' + errMsg, 'error');
+        return;
+    }
     if (statusEl)
         statusEl.textContent = `地面轨迹已绘制（${points.length}个轨道点，${durationHours}小时）`;
 }

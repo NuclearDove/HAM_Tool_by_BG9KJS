@@ -1541,12 +1541,20 @@ table.data-table tr.band-sub:hover {
     }, 8000);
     // 捕获未处理的Promise rejection
     window.addEventListener('unhandledrejection', function(e) {
-        console.error('[HAM 诊断] 未捕获Promise错误:', e.reason);
+        var reason = e.reason;
+        // 输出完整堆栈跟踪以便诊断
+        if (reason && reason.stack) {
+            console.error('[HAM 诊断] 未捕获Promise错误:', reason.message, '\n', reason.stack);
+        } else {
+            console.error('[HAM 诊断] 未捕获Promise错误:', reason);
+        }
         var el = document.getElementById('statusBar');
-        if (el && !window.__HAM_BOOTED__) {
-            var msg = e.reason && e.reason.message ? e.reason.message : String(e.reason || '');
-            el.textContent = '⚠️ 加载错误: ' + msg.substring(0, 80);
+        if (el) {
+            var msg = reason && reason.message ? reason.message : String(reason || '');
+            el.textContent = '⚠️ ' + (window.__HAM_BOOTED__ ? '运行错误' : '加载错误') + ': ' + msg.substring(0, 80);
             el.style.color = '#e74c3c';
+            // 5秒后恢复状态栏
+            setTimeout(function() { if (el.style.color === 'rgb(231, 76, 60)') { el.style.color = ''; } }, 5000);
         }
     });
 })();
