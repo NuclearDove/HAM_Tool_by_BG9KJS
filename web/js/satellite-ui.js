@@ -5,7 +5,7 @@
  */
 'use strict';
 import { escHtml } from './core.js';
-import * as SatService from './services/satellite-service.js?v=20260730';
+import * as SatService from './services/satellite-service.js?v=20260802';
 // ============================================================
 // 共享工具
 // ============================================================
@@ -232,7 +232,7 @@ export function renderPasses(el, passes, minElev, source = 'n2yo') {
 // ============================================================
 // 地面轨迹渲染（MapLibre GL JS地图 - 使用共享地图模块）
 // ============================================================
-import { getMap, clearLayers, addMultiPolyline, addCircleMarker, addPopup, invalidateSize } from './shared-map.js?v=20260730';
+import { getMap, clearLayers, addMultiPolyline, addCircleMarker, addPopup, invalidateSize } from './shared-map.js?v=20260802';
 /**
  * 渲染卫星地面轨迹到MapLibre地图
  * @param {HTMLElement} container - 地图容器元素（未使用，保留兼容）

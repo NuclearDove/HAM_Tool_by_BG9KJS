@@ -4,11 +4,11 @@
  * @module ham-satellite
  */
 'use strict';
-import * as SatService from './services/satellite-service.js?v=20260730';
+import * as SatService from './services/satellite-service.js?v=20260802';
 import * as GeoService from './services/geo-service.js';
 import { showToast } from './ham-toast.js';
 import { latLonToGrid, escHtml } from './core.js';
-import { renderWtiaPosition, renderN2yoPosition, renderTlePosition, renderPasses, renderSatList as renderSatListUI, renderGroundTrack, clearGroundTrackMap, dirLabel } from './satellite-ui.js?v=20260730';
+import { renderWtiaPosition, renderN2yoPosition, renderTlePosition, renderPasses, renderSatList as renderSatListUI, renderGroundTrack, clearGroundTrackMap, dirLabel } from './satellite-ui.js?v=20260802';
 const $ = (id) => document.getElementById(id);
 let initialized = false;
 /** 当前主跟踪卫星（用于单卫星功能：过境预测、地面轨迹） */

@@ -5,7 +5,7 @@
  * @module shared-map
  */
 'use strict';
-import { CONFIG } from './core.js?v=20260730';
+import { CONFIG } from './core.js?v=20260802';
 // ============================================================
 // MapLibre GL JS 动态加载（与 ham-map.js 共用同一加载逻辑）
 // ============================================================

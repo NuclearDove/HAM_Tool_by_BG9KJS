@@ -200,7 +200,7 @@ function updateGrayLineIndicator() {
     // 绘制灰线MapLibre地图
     drawGrayLineMap(info);
 }
-import { getMap, clearLayers, addPolyline, addPolygon, addCircleMarker, addPopup, invalidateSize } from './shared-map.js?v=20260730';
+import { getMap, clearLayers, addPolyline, addPolygon, addCircleMarker, addPopup, invalidateSize } from './shared-map.js?v=20260802';
 /**
  * 绘制灰线MapLibre地图
  */

@@ -7,7 +7,7 @@
  */
 'use strict';
 import { CONFIG, parseQth, escHtml } from './core.js';
-import { loadMapLibre, reloadMapLibre } from './shared-map.js';
+import { loadMapLibre, reloadMapLibre } from './shared-map.js?v=20260802';
 let mapInstance = null;
 /** 跟踪已添加的标记，用于清除 */
 let markers = [];
