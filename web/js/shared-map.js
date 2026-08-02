@@ -68,6 +68,8 @@ const _maps = {};
 const _mapReady = {};
 /** 各地图的图层ID计数器 { id: number } */
 const _layerIdCount = {};
+/** 各地图的Popup引用 { id: maplibregl.Popup[] } */
+const _popups = {};
 /**
  * 获取或创建 MapLibre GL JS 地图实例
  * @param {string} mapId - 地图唯一标识（对应容器DOM id）
@@ -162,6 +164,13 @@ export function invalidateSize(mapId, delay = 200) {
 export function destroyMap(mapId) {
     const map = _maps[mapId];
     if (map) {
+        // 先移除Popup
+        if (_popups[mapId]) {
+            for (const p of _popups[mapId]) {
+                try { p.remove(); } catch (_) { /* ignore */ }
+            }
+            delete _popups[mapId];
+        }
         map.remove();
         delete _maps[mapId];
         delete _mapReady[mapId];
@@ -358,6 +367,9 @@ export function addPopup(mapId, coord, html, options = {}) {
         .setLngLat(coord)
         .setHTML(html)
         .addTo(map);
+    // 追踪Popup以便clearLayers时移除
+    if (!_popups[mapId]) _popups[mapId] = [];
+    _popups[mapId].push(popup);
     return popup;
 }
 /**
@@ -388,6 +400,13 @@ export function clearLayers(mapId) {
     // 移除源
     for (const sourceId of sourcesToRemove) {
         try { map.removeSource(sourceId); } catch (_) { /* ignore */ }
+    }
+    // 移除所有追踪的Popup
+    if (_popups[mapId]) {
+        for (const p of _popups[mapId]) {
+            try { p.remove(); } catch (_) { /* ignore */ }
+        }
+        _popups[mapId] = [];
     }
     // 重置计数器
     _layerIdCount[mapId] = 0;
